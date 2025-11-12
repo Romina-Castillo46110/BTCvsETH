@@ -1,20 +1,22 @@
-# BTC vs ETH — Proyecto de insights ejecutivos (2017–2025)
+# 🪙 BTC vs ETH — Proyecto de insights ejecutivos y Modelado Predictivo (2017–2025)
 
-Comparativo BTC vs ETH con datos diarios para responder preguntas ejecutivas: ¿qué conviene según el perfil (conservador vs crecimiento)?, ¿qué tan correlacionadas están?, ¿cuánto ayuda diversificar?, ¿qué activo hoy tiene mejor momentum?, etc. El análisis usa la API pública de Binance y métricas robustas como **Spearman** para correlación.
-
-El PDF del repo resume el propósito, preguntas y lecturas ejecutivas de cada gráfico (abstracto, hipótesis, “cómo leer” y decisiones por perfil).
-URL: https://docs.google.com/document/d/1f_cA2VTROM4JstWPx7nrsYGdTWW3CX_kYdZRSmqQvlU/edit?usp=sharing
+Comparativo integral entre **Bitcoin (BTC)** y **Ethereum (ETH)** con datos diarios, orientado a generar *insights ejecutivos y modelos predictivos*.  
+El análisis combina visualizaciones financieras con modelos de Machine Learning para responder preguntas sobre **rentabilidad, riesgo, momentum y diversificación**.
 
 ---
 
-## 🎯 Objetivo & Audiencia
+## 🎯 Objetivo y Audiencia
 
-- **Objetivo**: comparar BTC y ETH maximizando retorno y controlando riesgo (volatilidad, drawdowns), con decisiones por **perfil conservador** (Sharpe/vol y DD) vs **perfil crecimiento** (momentum/fortaleza relativa).
-- **Audiencia**: tesorería corporativa, asset managers, PMs, analistas de riesgo.
+**Objetivo:**  
+Analizar y modelar el comportamiento conjunto de BTC y ETH maximizando retorno y controlando riesgo (volatilidad, drawdowns).  
+El proyecto evoluciona desde análisis descriptivo hasta **predicción temporal de retornos diarios** con modelos basados en datos tabulares y secuenciales.
+
+**Audiencia:**  
+Tesorerías corporativas, gestores de cartera, asset managers, analistas cuantitativos y financieros.
 
 ---
 
-## ❓ Preguntas que responde
+## ❓ Preguntas clave
 
 1. ¿Es mejor Bitcoin o Ethereum?
 2. ¿Cuál es la mejor para invertir **hoy** (Sharpe simple y momentum)?
@@ -35,69 +37,123 @@ URL: https://docs.google.com/document/d/1f_cA2VTROM4JstWPx7nrsYGdTWW3CX_kYdZRSmq
 
 ---
 
-## 🛠️ Reproducibilidad
+## 🧪 Feature Engineering mínimo
 
-### Opción A: bajar datos (primera vez)
-En el notebook activar `RUN_API=True` y ejecutar la celda de descarga (crea `data/raw/…csv`).
+- **Retornos diarios (`ret_d`)**: variación porcentual del precio día a día.  
+- **Volatilidad (`vol_30`, `vol_90`)**: riesgo medido como desviación estándar móvil de 30 y 90 días.  
+- **Drawdown (`dd`)**: caída porcentual desde el máximo anterior, útil para medir pérdidas potenciales.  
+- **ETH/BTC (fortaleza relativa)**: relación entre ambos precios para identificar liderazgo de activos.  
+- **Momentum (30d / 90d)**: retornos acumulados que reflejan la aceleración o inercia del precio.  
+- **Correlación (Spearman)**: mide la relación no lineal entre los movimientos de BTC y ETH.  
+- **Curva de cartera combinada**: volatilidad anualizada de una cartera \( w \cdot BTC + (1-w) \cdot ETH \), usada para evaluar el efecto diversificador.
 
-### Opción B: trabajo offline
-Dejar `RUN_API=False` (o comentar la celda) y cargar desde `data/raw/…csv`.
-
----
-
-## 📦 Entorno
-
-- Python 3.10+  
-- Paquetes: `pandas numpy matplotlib requests scipy` (Spearman se calcula también con `pandas.DataFrame.corr(method="spearman")`).
+Estas métricas permiten construir tanto análisis descriptivos como modelos predictivos basados en dependencias temporales y estructurales.
 
 ---
 
-## 🧪 Feature engineering mínimo
+## 📊 Visualizaciones ejecutivas
 
-- **Retornos**: `ret_d = price.pct_change()`
-- **Volatilidad**: `vol_30`, `vol_90` = `rolling(std) * sqrt(365)`
-- **Drawdown**: `dd = price / price.cummax() - 1`
-- **ETH/BTC**: razón `ETH / BTC`
-- **Momentum**: retornos acumulados 30/90 días
-- **Spearman**: `pv_ret.corr(method="spearman")` y **rolling** (60/90d)
-- **Curva de cartera**: vol anualizada de `w*BTC + (1-w)*ETH`
+Las figuras se guardan automáticamente en /figures/:
+
+| Figura                               | Descripción                           |
+| :----------------------------------- | :------------------------------------ |
+| **01_precio_normalizado.png**        | Precio normalizado base 100           |
+| **02_volatilidad_90d.png**           | Volatilidad anualizada rolling        |
+| **03_drawdowns.png**                 | Drawdowns acumulados                  |
+| **04_correlacion_spearman.png**      | Correlación BTC–ETH                   |
+| **05_eth_btc.png**                   | Fortaleza relativa ETH/BTC            |
+| **06_momentum_barras.png**           | Momentum 30d y 90d                    |
+| **07_diversificacion_curva_vol.png** | Volatilidad cartera BTC–ETH           |
+| **08_comparacion_auc_modelos.png**   | Comparativa LightGBM / LSTM / Híbrido |
+
+Cada gráfico incluye su interpretación: qué muestra, cómo leerlo, conclusiones y decisión por perfil (conservador vs táctico) en el documento PDF del informe.
+
+## 🧠 Modelado Predictivo (Machine Learning)
+
+El análisis se amplía a un problema de **clasificación binaria temporal**, prediciendo si el retorno diario de BTC será positivo (`1`) o negativo (`0`).
+
+### **Modelos utilizados (progresión de complejidad)**
+
+#### 1️⃣ LightGBM con lags y rolling features
+- Modelo basado en árboles de decisión.  
+- Incorpora memoria manual mediante rezagos y medias móviles.  
+- **AUC promedio:** ~0.77 (validación cruzada 5 folds).  
+- Sirve como baseline tabular.
+
+#### 2️⃣ LSTM (Long Short-Term Memory)
+- Red neuronal recurrente secuencial.  
+- Aprende dependencias temporales de 10 días consecutivos.  
+- **AUC promedio:** ~0.70.  
+- Capta momentum y volatilidad, aunque con mayor costo computacional.
+
+#### 3️⃣ Modelo híbrido (LSTM + LightGBM)
+- Integra la **señal secuencial aprendida por la LSTM (`lstm_score`)** como feature adicional para LightGBM.  
+- Combina explicabilidad estructural con memoria temporal.  
+- **AUC promedio:** ~0.71.  
+- Más estable ante cambios de régimen de mercado.
+
+Esta combinación de modelos permite no solo comparar rendimientos, sino también anticipar direccionalidad de precios con una base estadística sólida.
 
 ---
 
-## 📊 Gráficos principales (se guardan en `figures/`)
+## ⚗️ Comparación de desempeño
 
-1. `01_precio_normalizado.png` — Precio normalizado (base=100)
-2. `02_volatilidad_90d.png` — Volatilidad anualizada (rolling 90d)
-3. `03_drawdowns.png` — Drawdowns (desde máximos previos)
-4. `04_correlacion_spearman.png` — Dispersión de retornos y ρₛ
-5. `05_eth_btc.png` — ETH/BTC (fortaleza relativa)
-6. `06_momentum_barras.png` — Momentum 30/90 días
-7. `07_diversificacion_curva_vol.png` — Vol de cartera vs peso BTC
-8. `07_spearman_rolling.png` — ρₛ rolling 60/90 días
+| Modelo | Tipo | AUC | Características |
+|:--|:--|:--:|:--|
+| **LightGBM** | Tabular (lags y rolling) | **0.769** | Base sólida con memoria manual |
+| **LSTM** | Secuencial (10 pasos) | **0.701** | Capta dependencias temporales |
+| **Híbrido (LSTM + LightGBM)** | Mixto | **0.711** | Integra memoria temporal y estructura explicativa |
 
----
-
-## ▶️ Cómo ejecutar
-
-1. Abrí `finalProject.ipynb` en Jupyter/VS Code.
-2. (Opcional) Ejecutá la celda de descarga de datos (solo la primera vez).
-3. Ejecutá el resto de celdas (transformaciones, métricas, figuras).
-4. Las imágenes/CSV de resultados quedan en `figures/` y `export/` (si el helper `savefig` y export está activo).
+**Conclusión:**  
+Aunque LightGBM mantiene el mejor AUC, el modelo híbrido aporta **mayor coherencia y estabilidad** en fases volátiles, combinando señales de tendencia y riesgo. Ver sección 10 en PDF.
 
 ---
 
-## 🧾 Resultados automáticos
+## ⚙️ Reproducibilidad
 
-El notebook imprime respuestas cortas para cada pregunta (p. ej., “más rentable en el período”, “mejor para invertir hoy”, “ρₛ y diversificación”, etc.) y guarda las imágenes.
+1. **Clonar el repositorio**
+ ```bash
+   git clone https://github.com/Romina-Castillo46110/BTCvsETH.git
+   cd BTCvsETH
+ ```
 
----
+2. **Instalar dependencias**
+```bash
+  pip install -r requirements.txt
+```
+3. **Ejecutar el notebook**
+
+finalProject.ipynb
+
+4. **Visualizar resultados**
+   - Las figuras se generan en `figures/`
+   - Las métricas se imprimen en el notebook
+
+## 📦 Entorno y librerías
+
+- Python 3.10+
+- pandas, numpy, matplotlib, scipy  
+- scikit-learn, lightgbm, xgboost  
+- tensorflow / keras (para LSTM)
 
 ## ⚠️ Descargo
 
-Este proyecto es **educativo**. No constituye asesoramiento financiero. Los criptoactivos son volátiles; usá gestión de riesgo (tamaño de posición, VaR/ES, stops).
+Este proyecto tiene fines educativos y de análisis cuantitativo.
+No constituye asesoramiento financiero.
+Los criptoactivos son volátiles: aplicá gestión de riesgo (posición, VaR/ES, stops).
 
----
+## 👩‍💻 Autora
 
-## 📚 Documento del informe
+**Romina Castillo** — Data Analyst Jr & Data Scientist Trainee | Machine Learning  
+Proyecto desarrollado como trabajo final del curso de Ciencia de Datos.  
+📫 [LinkedIn](www.linkedin.com/in/romina-castillo-239370281) | [GitHub](https://github.com/Romina-Castillo46110)
 
-El PDF “BTC vs ETH — Proyecto de insights ejecutivos (2017–2025)” acompaña el notebook con la narrativa ejecutiva y las lecturas de cada gráfico.
+
+
+
+
+
+
+
+
+
