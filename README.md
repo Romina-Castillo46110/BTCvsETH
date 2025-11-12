@@ -2,6 +2,7 @@
 
 Comparativo integral entre **Bitcoin (BTC)** y **Ethereum (ETH)** con datos diarios, orientado a generar *insights ejecutivos y modelos predictivos*.  
 El análisis combina visualizaciones financieras con modelos de Machine Learning para responder preguntas sobre **rentabilidad, riesgo, momentum y diversificación**.
+Link al informe: https://docs.google.com/document/d/1f_cA2VTROM4JstWPx7nrsYGdTWW3CX_kYdZRSmqQvlU/edit?usp=sharing
 
 ---
 
